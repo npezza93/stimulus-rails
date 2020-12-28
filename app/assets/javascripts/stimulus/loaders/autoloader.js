@@ -1,21 +1,38 @@
 import { Application } from "stimulus"
 
 const application = Application.start()
+const { controllerAttribute } = application.schema
+
+const loaded = {}
 
 function autoload() {
-  Array.from(document.querySelectorAll('[data-controller]')).forEach((element) => {
-    const controllerNames = element.attributes["data-controller"].value.split(" ")
-
-    controllerNames.forEach((controllerName) => {
-      let controllerFilename = `${controllerName}_controller`
-
-      import(controllerFilename).then((controllerModule) => {
-        application.register(controllerName, controllerModule.default)
-      }).catch(error => console.log(`Failed to autoload controller: ${controllerName}`))
-    })
-  })
+  for (const element of document.querySelectorAll(`[${controllerAttribute}]`)) {
+    autoloadControllers(element)
+  }
 }
 
-autoload()
+function autoloadControllers(element) {
+  const controllerTokens = element.getAttribute(controllerAttribute) || ""
+  const controllerNames = controllerTokens.split(/\s+/).filter(content => content.length)
 
-window.addEventListener("turbo:load", autoload)
+  for (const controllerName of controllerNames) {
+    const filename = controllerName.replace(/--/g, "/").replace(/-/g, "_")
+    import(`${filename}_controller`).then(controllerModule => {
+      if (controllerName in loaded) return
+
+      application.register(controllerName, controllerModule.default)
+
+      loaded[controllerName] = true
+    }).catch(error => console.log(`Failed to autoload controller: ${controllerName}`))
+  }
+}
+
+new MutationObserver((mutationsList) => {
+  mutationsList.forEach(({ attributeName, target }) => {
+    if (attributeName == controllerAttribute && target.hasAttribute(attributeName)) {
+      autoloadControllers(target)
+    }
+  })
+}).observe(document.body, { attributeFilter: [controllerAttribute], subtree: true, childList: true })
+
+autoload()
