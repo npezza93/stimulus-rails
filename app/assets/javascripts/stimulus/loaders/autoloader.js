@@ -23,7 +23,10 @@ function autoloadControllers(element) {
       application.register(controllerName, controllerModule.default)
 
       loaded[controllerName] = true
-    }).catch(error => console.log(`${error} Failed to autoload controller: ${controllerName}`))
+    }).catch((error) => {
+      window.loaderError = error
+      console.log(`${error} Failed to autoload controller: ${controllerName}`)
+    });
   }
 }
 
