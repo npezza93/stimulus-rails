@@ -17,7 +17,8 @@ function autoloadControllers(element) {
 
   for (const controllerName of controllerNames) {
     const filename = controllerName.replace(/--/g, "/").replace(/-/g, "_")
-    import(`${filename}_controller`).then(controllerModule => {
+    console.log(filename)
+    import(`${filename}_controller`).then((controllerModule) => {
       if (controllerName in loaded) return
 
       application.register(controllerName, controllerModule.default)
